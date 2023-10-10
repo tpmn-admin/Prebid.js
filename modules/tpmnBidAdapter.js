@@ -6,8 +6,9 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
-export const ADAPTER_VERSION = '2';
+export const ADAPTER_VERSION = '2.0';
 const BIDDER_CODE = 'tpmn';
+const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
@@ -116,7 +117,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
 
   return {
     method: 'POST',
-    url: BIDDER_ENDPOINT_URL,
+    url: BIDDER_ENDPOINT_URL + '?av=' + ADAPTER_VERSION,
     data: rtbData,
     options: { contentType: 'application/json;charset=UTF-8', withCredentials: false }
   }
@@ -130,6 +131,7 @@ registerBidder(spec);
 
 const CONVERTER = ortbConverter({
   context: {
+    ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY
   },
   imp(buildImp, bidRequest, context) {
