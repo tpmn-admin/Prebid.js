@@ -1,12 +1,15 @@
 /* eslint-disable no-tabs */
+import { spec, storage, VIDEO_RENDERER_URL, ADAPTER_VERSION } from 'modules/tpmnBidAdapter.js';
+import { generateUUID } from '../../../src/utils.js';
 import { expect } from 'chai';
-import { spec, storage } from 'modules/tpmnBidAdapter.js';
 import * as utils from 'src/utils';
+import * as sinon from 'sinon';
+
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
   bidder: BIDDER_CODE,
   params: {
-    inventoryId: 1
+    inventoryId: 1, publisherId: BIDDER_CODE
   },
   mediaTypes: {
     banner: {
@@ -24,7 +27,7 @@ const BANNER_BID = {
 const VIDEO_BID = {
   bidder: BIDDER_CODE,
   params: {
-    inventoryId: 1
+    inventoryId: 1, publisherId: BIDDER_CODE
   },
   mediaTypes: {
     video: {
@@ -49,7 +52,7 @@ const VIDEO_BID = {
 const BIDDER_REQUEST = {
   auctionId: 'auctionId-56a2-4f71-9098-720a68f2f708',
   bidderRequestId: 'bidderRequestId',
-  timeout: 3000,
+  timeout: 300,
   refererInfo: {
     page: 'https://hello-world-page.com/',
     domain: 'hello-world-page.com',
@@ -115,13 +118,31 @@ const VIDEO_BID_RESPONSE = {
   'cur': 'USD'
 };
 
-describe('TPMN bid adapter', function () {
+describe('tpmnAdapterTests', function () {
+  let sandbox = sinon.sandbox.create();
+  let getCookieStub;
+  beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      tpmn: {
+        storageAllowed: true
+      }
+    };
+    sandbox = sinon.sandbox.create();
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    getCookieStub.restore();
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
+
   describe('isBidRequestValid()', function () {
     it('should accept request if placementId is passed', function () {
       let bid = {
         bidder: BIDDER_CODE,
         params: {
-          placementId: 123
+          inventoryId: 123, publisherId: BIDDER_CODE
         },
         mediaTypes: {
           banner: {
@@ -220,7 +241,7 @@ describe('TPMN bid adapter', function () {
         const videoBidWithParams = utils.deepClone(VIDEO_BID);
         const bidderVideoParams = {
           api: [1, 2],
-          mimes: ['video/mp4', 'video/x-flv'],
+          mimes: ['video/mp4'],
           playbackmethod: [3, 4],
           protocols: [5, 6],
           placement: 1,
@@ -267,7 +288,7 @@ describe('TPMN bid adapter', function () {
         expect(bids[0].ad).to.equal(BANNER_BID_RESPONSE.seatbid[0].bid[0].adm);
         expect(bids[0].creativeId).to.equal(BANNER_BID_RESPONSE.seatbid[0].bid[0].crid);
         expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
-        expect(bids[0].ttl).to.equal(30);
+        expect(bids[0].ttl).to.equal(300);
         expect(bids[0].netRevenue).to.equal(true);
       });
 
@@ -297,9 +318,10 @@ describe('TPMN bid adapter', function () {
           expect(bids[0].width).to.equal(VIDEO_BID_RESPONSE.seatbid[0].bid[0].w);
           expect(bids[0].height).to.equal(VIDEO_BID_RESPONSE.seatbid[0].bid[0].h);
           expect(bids[0].vastXml).to.equal(VIDEO_BID_RESPONSE.seatbid[0].bid[0].adm);
+          expect(bids[0].rendererUrl).to.equal(VIDEO_RENDERER_URL);
           expect(bids[0].creativeId).to.equal(VIDEO_BID_RESPONSE.seatbid[0].bid[0].crid);
           expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
-          expect(bids[0].ttl).to.equal(30);
+          expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(true);
         });
       });

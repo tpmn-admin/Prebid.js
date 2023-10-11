@@ -3,10 +3,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
-export const ADAPTER_VERSION = '2.0';
 const BIDDER_CODE = 'tpmn';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -34,8 +34,9 @@ const BANNER_ORTB_PARAMS = [
   'battr'
 ];
 
+export const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+export const ADAPTER_VERSION = '2.0';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -63,7 +64,7 @@ function isValidInventoryId(bid) {
 }
 
 function isValidPublisherId(bid) {
-  return 'params' in bid && 'publisherId' in bid.params && utils.isNumber(bid.params.publisherId);
+  return 'params' in bid && 'publisherId' in bid.params && utils.isStr(bid.params.publisherId);
 }
 
 function isValidBannerRequest(bid) {
@@ -108,16 +109,16 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     rtbData.user.ext.consent = bidderRequest.gdprConsent.consentString;
     rtbData.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
   }
-
-  if (bid.param.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
-  if (bid.param.publisherId) rtbData.ext.publisherId = bid.params.publisherId
+  if (bid.params.inventoryId || bid.params.publisherId) rtbData.ext = {};
+  if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
+  if (bid.params.publisherId) rtbData.ext.publisherId = bid.params.publisherId
   if (bid.params.bcat) rtbData.bcat = bid.params.bcat;
   if (bid.params.badv) rtbData.badv = bid.params.badv;
   if (bid.params.bapp) rtbData.bapp = bid.params.bapp;
 
   return {
     method: 'POST',
-    url: BIDDER_ENDPOINT_URL + '?av=' + ADAPTER_VERSION,
+    url: BIDDER_ENDPOINT_URL + '?pbjsv=' + ADAPTER_VERSION,
     data: rtbData,
     options: { contentType: 'application/json;charset=UTF-8', withCredentials: false }
   }
@@ -131,6 +132,7 @@ registerBidder(spec);
 
 const CONVERTER = ortbConverter({
   context: {
+    netRevenue: true,
     ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY
   },
@@ -149,8 +151,47 @@ const CONVERTER = ortbConverter({
     }
 
     return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    const {bidRequest} = context;
+    if (bidResponse.mediaType === VIDEO) {
+      if (bidRequest.mediaTypes.video.context === 'outstream') {
+        bidResponse.rendererUrl = VIDEO_RENDERER_URL;
+        bidResponse.renderer = createRenderer(bidRequest);
+      }
+    }
+    return bidResponse;
   }
 });
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    });
+  });
+}
+
+function createRenderer(bid) {
+  const renderer = Renderer.install({
+    id: bid.bidId,
+    url: VIDEO_RENDERER_URL,
+    loaded: false,
+    config: utils.deepAccess(bid, 'renderer.options'),
+    adUnitCode: bid.adUnitCode
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
+}
 
 /**
  * Creates site description object
