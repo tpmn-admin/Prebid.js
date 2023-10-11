@@ -74,7 +74,11 @@ function isValidBannerRequest(bid) {
 
 function isValidVideoRequest(bid) {
   const videoSizes = utils.deepAccess(bid, `mediaTypes.${VIDEO}.playerSize`);
-  return utils.isArray(videoSizes) && videoSizes.length > 0 && videoSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
+  const videoMimes = utils.deepAccess(bid, `mediaTypes.${VIDEO}.mimes`);
+
+  const isValidVideoSize = utils.isArray(videoSizes) && videoSizes.length > 0 && videoSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
+  const isValidVideoMimes = utils.isArray(videoMimes) && videoMimes.length > 0;
+  return isValidVideoSize && isValidVideoMimes;
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -139,11 +143,6 @@ const CONVERTER = ortbConverter({
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp.secure = Number(window.location.protocol === 'https:');
-    if (!imp.bidfloor && bidRequest.params.bidFloor) {
-      imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = utils.getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
-    }
-
     if (bidRequest.mediaTypes[VIDEO]) {
       imp = buildVideoImp(bidRequest, imp);
     } else if (bidRequest.mediaTypes[BANNER]) {
