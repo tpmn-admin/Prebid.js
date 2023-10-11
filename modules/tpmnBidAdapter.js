@@ -117,7 +117,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
 
   return {
     method: 'POST',
-    url: BIDDER_ENDPOINT_URL + '?ver=' + ADAPTER_VERSION,
+    url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
     data: rtbData,
     options: { contentType: 'application/json;charset=UTF-8', withCredentials: false }
   }
