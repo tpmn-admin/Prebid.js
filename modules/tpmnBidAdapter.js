@@ -56,15 +56,11 @@ export const spec = {
 }
 
 function isBidRequestValid(bid) {
-  return (isValidInventoryId(bid) && isValidPublisherId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));
+  return (isValidInventoryId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));
 }
 
 function isValidInventoryId(bid) {
   return 'params' in bid && 'inventoryId' in bid.params && utils.isNumber(bid.params.inventoryId);
-}
-
-function isValidPublisherId(bid) {
-  return 'params' in bid && 'publisherId' in bid.params && utils.isStr(bid.params.publisherId);
 }
 
 function isValidBannerRequest(bid) {
@@ -113,9 +109,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     rtbData.user.ext.consent = bidderRequest.gdprConsent.consentString;
     rtbData.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
   }
-  if (bid.params.inventoryId || bid.params.publisherId) rtbData.ext = {};
+  if (bid.params.inventoryId) rtbData.ext = {};
   if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
-  if (bid.params.publisherId) rtbData.ext.publisherId = bid.params.publisherId
   if (bid.params.bcat) rtbData.bcat = bid.params.bcat;
   if (bid.params.badv) rtbData.badv = bid.params.badv;
   if (bid.params.bapp) rtbData.bapp = bid.params.bapp;
@@ -143,6 +138,9 @@ const CONVERTER = ortbConverter({
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp.secure = Number(window.location.protocol === 'https:');
+    if (!imp.bidfloor && bidRequest.params.bidFloor) {
+      imp.bidfloor = bidRequest.params.bidFloor;
+    }
     if (bidRequest.mediaTypes[VIDEO]) {
       imp = buildVideoImp(bidRequest, imp);
     } else if (bidRequest.mediaTypes[BANNER]) {

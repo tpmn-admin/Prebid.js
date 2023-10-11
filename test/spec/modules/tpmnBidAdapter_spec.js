@@ -9,7 +9,7 @@ const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
   bidder: BIDDER_CODE,
   params: {
-    inventoryId: 1, publisherId: BIDDER_CODE
+    inventoryId: 1
   },
   mediaTypes: {
     banner: {
@@ -27,7 +27,7 @@ const BANNER_BID = {
 const VIDEO_BID = {
   bidder: BIDDER_CODE,
   params: {
-    inventoryId: 1, publisherId: BIDDER_CODE
+    inventoryId: 1
   },
   mediaTypes: {
     video: {
@@ -142,7 +142,7 @@ describe('tpmnAdapterTests', function () {
       let bid = {
         bidder: BIDDER_CODE,
         params: {
-          inventoryId: 123, publisherId: BIDDER_CODE
+          inventoryId: 123
         },
         mediaTypes: {
           banner: {
