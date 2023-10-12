@@ -11,8 +11,8 @@ const BIDDER_CODE = 'tpmn';
 const DEFAULT_BID_TTL = 500;
 const DEFAULT_CURRENCY = 'USD';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
-const BIDDER_ENDPOINT_URL = 'http://localhost:8081/ortb/pbjs_bidder';
-// const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
+// const BIDDER_ENDPOINT_URL = 'http://localhost:8081/ortb/pbjs_bidder';
+const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
 const IFRAMESYNC = 'https://gat.tpmn.io/sync/iframe';
 const VIDEO_ORTB_PARAMS = [
   'mimes',
@@ -151,8 +151,12 @@ const CONVERTER = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
     const {bidRequest} = context;
+    const bidResponse = buildBidResponse(bid, context);
+    utils.logInfo('Building bidResponse');
+    utils.logInfo('bid', bid);
+    utils.logInfo('bidRequest', bidRequest);
+    utils.logInfo('bidResponse', bidResponse);
     if (bidResponse.mediaType === VIDEO) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {
         bidResponse.rendererUrl = VIDEO_RENDERER_URL;
@@ -163,24 +167,29 @@ const CONVERTER = ortbConverter({
   }
 });
 
-function outstreamRender(bid) {
+function outstreamRender(bid, doc) {
   bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      sizes: [bid.width, bid.height],
+    const win = utils.getWindowFromDocument(doc) || window;
+    win.ANOutstreamVideo.renderAd({
+      sizes: [bid.playerWidth, bid.playerHeight],
       targetId: bid.adUnitCode,
-      adResponse: bid.adResponse,
-      rendererOptions: bid.renderer.getConfig()
-    });
+      rendererOptions: bid.renderer.getConfig(),
+      adResponse: { content: bid.vastXml }
+
+    }, handleOutstreamRendererEvents.bind(null, bid));
   });
 }
 
+function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
+}
+
 function createRenderer(bid) {
-  utils.logWarn('TPMN createRenderer!!!!!!!!!!!!!!!!!');
   const renderer = Renderer.install({
     id: bid.bidId,
     url: VIDEO_RENDERER_URL,
-    loaded: false,
     config: utils.deepAccess(bid, 'renderer.options'),
+    loaded: false,
     adUnitCode: bid.adUnitCode
   });
 
