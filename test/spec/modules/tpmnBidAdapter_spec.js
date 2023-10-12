@@ -52,7 +52,7 @@ const VIDEO_BID = {
 const BIDDER_REQUEST = {
   auctionId: 'auctionId-56a2-4f71-9098-720a68f2f708',
   bidderRequestId: 'bidderRequestId',
-  timeout: 300,
+  timeout: 500,
   refererInfo: {
     page: 'https://hello-world-page.com/',
     domain: 'hello-world-page.com',
@@ -288,7 +288,7 @@ describe('tpmnAdapterTests', function () {
         expect(bids[0].ad).to.equal(BANNER_BID_RESPONSE.seatbid[0].bid[0].adm);
         expect(bids[0].creativeId).to.equal(BANNER_BID_RESPONSE.seatbid[0].bid[0].crid);
         expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
-        expect(bids[0].ttl).to.equal(300);
+        expect(bids[0].ttl).to.equal(500);
         expect(bids[0].netRevenue).to.equal(true);
       });
 
@@ -321,7 +321,7 @@ describe('tpmnAdapterTests', function () {
           expect(bids[0].rendererUrl).to.equal(VIDEO_RENDERER_URL);
           expect(bids[0].creativeId).to.equal(VIDEO_BID_RESPONSE.seatbid[0].bid[0].crid);
           expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
-          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].ttl).to.equal(500);
           expect(bids[0].netRevenue).to.equal(true);
         });
       });

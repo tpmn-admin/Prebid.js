@@ -8,10 +8,11 @@ import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'tpmn';
-const DEFAULT_BID_TTL = 300;
+const DEFAULT_BID_TTL = 500;
 const DEFAULT_CURRENCY = 'USD';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
-const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
+const BIDDER_ENDPOINT_URL = 'http://localhost:8081/ortb/pbjs_bidder';
+// const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
 const IFRAMESYNC = 'https://gat.tpmn.io/sync/iframe';
 const VIDEO_ORTB_PARAMS = [
   'mimes',
@@ -174,6 +175,7 @@ function outstreamRender(bid) {
 }
 
 function createRenderer(bid) {
+  utils.logWarn('TPMN createRenderer!!!!!!!!!!!!!!!!!');
   const renderer = Renderer.install({
     id: bid.bidId,
     url: VIDEO_RENDERER_URL,

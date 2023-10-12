@@ -46,7 +46,7 @@ NOTE:
       {
         bidder: 'tpmn',
         params: {
-          inventoryId: '1',         // required
+          inventoryId: 1,         // required
           bidFloor: 2.0,            // recommended
           ... // bcat, badv, bapp   // optional
         }
@@ -106,7 +106,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
         bids: [{
             bidder: 'tpmn',
             params: {
-                inventoryId: '2',         // required
+                inventoryId: 2,         // required
                 bidFloor: 2.0,            // recommended
                 ... // bcat, badv, bapp   // optional
             }
