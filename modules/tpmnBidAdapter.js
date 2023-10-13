@@ -99,6 +99,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
   const bid = bidRequests.find((b) => b.params.inventoryId)
+  // console.log('createRequest : ', mediaType, bid);
+
   if (!rtbData.site) rtbData.site = {}
   rtbData.site = createSite(bidderRequest.refererInfo)
 
@@ -153,11 +155,15 @@ const CONVERTER = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const {bidRequest} = context;
     const bidResponse = buildBidResponse(bid, context);
-    utils.logInfo('Building bidResponse');
-    utils.logInfo('bid', bid);
-    utils.logInfo('bidRequest', bidRequest);
-    utils.logInfo('bidResponse', bidResponse);
-    if (bidResponse.mediaType === VIDEO) {
+
+    utils.logWarn('Building bidResponse');
+    utils.logWarn('bid', bid);
+    utils.logWarn('bidRequest', bidRequest);
+    utils.logWarn('bidResponse', bidResponse);
+
+    if (bidResponse.mediaType === BANNER) {
+      bidResponse.ad = bid.adm;
+    } else if (bidResponse.mediaType === VIDEO) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {
         bidResponse.rendererUrl = VIDEO_RENDERER_URL;
         bidResponse.renderer = createRenderer(bidRequest);
@@ -166,23 +172,6 @@ const CONVERTER = ortbConverter({
     return bidResponse;
   }
 });
-
-function outstreamRender(bid, doc) {
-  bid.renderer.push(() => {
-    const win = utils.getWindowFromDocument(doc) || window;
-    win.ANOutstreamVideo.renderAd({
-      sizes: [bid.playerWidth, bid.playerHeight],
-      targetId: bid.adUnitCode,
-      rendererOptions: bid.renderer.getConfig(),
-      adResponse: { content: bid.vastXml }
-
-    }, handleOutstreamRendererEvents.bind(null, bid));
-  });
-}
-
-function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({ id, eventName });
-}
 
 function createRenderer(bid) {
   const renderer = Renderer.install({
@@ -199,6 +188,23 @@ function createRenderer(bid) {
     utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
+}
+
+function outstreamRender(bid, doc) {
+  bid.renderer.push(() => {
+    const win = utils.getWindowFromDocument(doc) || window;
+    win.ANOutstreamVideo.renderAd({
+      sizes: [bid.playerWidth, bid.playerHeight],
+      targetId: bid.adUnitCode,
+      rendererOptions: bid.renderer.getConfig(),
+      adResponse: { content: bid.vastXml }
+
+    }, handleOutstreamRendererEvents.bind(null, bid));
+  });
+}
+
+function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 /**

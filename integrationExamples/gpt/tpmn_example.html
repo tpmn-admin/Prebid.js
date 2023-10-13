@@ -24,15 +24,15 @@
             code: 'banner-div-0',
             mediaTypes: {
                 banner: {
-                    sizes: [[320, 50]], 
-                    battr: [1,2,3] 
+                    sizes: [[300, 250]], 
+                    battr: [] 
                 }
             },
             bids: [{
                 bidder: 'tpmn',
                 params: {
-                inventoryId: 2, 
-                bidFloor: 2.0, 
+                    inventoryId: 2, 
+                    bidFloor: 0.1, 
                 }
             }]
         },
@@ -60,8 +60,15 @@
                     inventoryId: 2,
                     bidFloor: 2.0,
                 }
-            }]
-        }];
+            }],
+            renderer: {
+                options: {
+                    adText : "TPMN Ad",
+                    disableCollapse : true
+                }
+            }
+        }
+        ];
     </script>
     <script>
         var googletag = googletag || {};
@@ -72,13 +79,45 @@
  
         pbjs.que.push(function () {
             pbjs.setConfig({
+                debug: true,
                 enableSendAllBids: false,
-                priceGranularity: customConfigObject
+                priceGranularity: customConfigObject,
+                userSync: {
+                    userIds: [{
+                        name: "pubCommonId",
+                        storage: {
+                            name: "pubcid",
+                            type: "cookie",
+                            days: 30
+                        }
+                    },{
+                        name: "unifiedId",
+                        storage: {
+                            type: "cookie",
+                            name: "unifiedid",
+                            expires: 60
+                        }
+                    }],
+                    userIdAsEids: true
+                }
             });
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
         });
+
         function sendAdServerRequest() {
+            if (pbjs.adserverRequestSent) return;
+
+            //Google Ad Server Use Banner
+            googletag.cmd.push(() => {
+            googletag
+                .defineSlot('/19968336/header-bid-tag-0', [300, 250], 'banner-div-0')
+                .addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+            });
+
+            //Direct Rendering Video
             var highestCpmBids = pbjs.getHighestCpmBids('video-div-1');
             console.log("highestCpmBids", highestCpmBids);
             if (highestCpmBids.length) {
@@ -86,6 +125,15 @@
                 console.log("highestCpmBids[0].adId", highestCpmBids[0].adId);
                 pbjs.renderAd(doc, highestCpmBids[0].adId);
             }
+
+            // googletag.cmd.push(() => {
+            // googletag
+            //     .defineSlot('/19968336/header-bid-tag-0', [640, 480], 'video-div-1')
+            //     .addService(googletag.pubads());
+            // googletag.pubads().enableSingleRequest();
+            // googletag.enableServices();
+            // });
+
             googletag.cmd.push(function () {
                 pbjs.que.push(function () {
                     pbjs.setTargetingForGPTAsync('banner-div-0');
@@ -95,17 +143,10 @@
             });
         }
     </script>
-    <script>
-        googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/prebid-banner-test', [[300, 250]], 'banner-div-0').addService(googletag.pubads());
-            googletag.defineSlot('/19968336/prebid-video-test', [[1024, 768]], 'video-div-1').addService(googletag.pubads());
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
-        });
-    </script>
+     
 </head>
 <body>
-    <h2>Prebid.js Banner Example</h2>
+    <h2>Prebid.js TPMN Banner Example</h2>
     <div id='banner-div-0'>
         <script>
             googletag.cmd.push(function () {
@@ -114,17 +155,14 @@
         </script>
     </div>
     <br>
-    <h2>Prebid.js Video Example</h2>
-    <div style="width: 640px; height: 480px;">
-        <div id='video-div-1'>
-            <script>
-                googletag.cmd.push(function () {
-                    googletag.display('video-div-1');
-                });
-            </script>
-        </div>
+    <h2>Prebid.js TPMN Video Example</h2>
+    <div id='video-div-1' style="width: 640px; height: 480px;">
+        <script>
+             googletag.cmd.push(function () {
+                googletag.display('video-div-1');
+            });
+        </script>
     </div>
     <br>
-     
     <div id="targeting-keys"></div>
 </body>
